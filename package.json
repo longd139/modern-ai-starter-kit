@@ -1,0 +1,22 @@
+{
+  "name": "modern-ai-developer-starter-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fullstack Starter Kit for Course 4 - The Modern AI Software Developer",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm --workspace=server run dev",
+    "dev:client": "npm --workspace=client run dev",
+    "build": "npm run build --workspaces",
+    "test": "npm --workspace=server test",
+    "test:coverage": "npm --workspace=server run test:coverage",
+    "lint": "npm run lint --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
