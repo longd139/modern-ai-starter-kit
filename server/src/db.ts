@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 export interface Task {
   id: string;
   title: string;
@@ -10,7 +12,7 @@ export interface Task {
 
 let tasks: Task[] = [
   {
-    id: '1',
+    id: randomUUID(),
     title: 'Khởi tạo dự án & setup CLAUDE.md',
     description: 'Chạy thử Claude Code với file CLAUDE.md cấu hình mẫu.',
     status: 'done',
@@ -19,7 +21,7 @@ let tasks: Task[] = [
     updatedAt: new Date().toISOString(),
   },
   {
-    id: '2',
+    id: randomUUID(),
     title: 'Viết test cho API tasks',
     description: 'Bổ sung unit test và integration test với Vitest & Supertest.',
     status: 'in_progress',
@@ -28,7 +30,7 @@ let tasks: Task[] = [
     updatedAt: new Date().toISOString(),
   },
   {
-    id: '3',
+    id: randomUUID(),
     title: 'Tích hợp giao diện Kanban React',
     description: 'Hiển thị các thẻ theo cột Todo, In Progress, Done.',
     status: 'todo',
@@ -47,7 +49,7 @@ export const createTask = (
   data: Pick<Task, 'title' | 'description'> & { priority?: Task['priority'] }
 ): Task => {
   const newTask: Task = {
-    id: Date.now().toString(),
+    id: randomUUID(),
     title: data.title,
     description: data.description || '',
     status: 'todo',

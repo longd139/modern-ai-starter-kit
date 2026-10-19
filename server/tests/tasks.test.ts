@@ -29,6 +29,22 @@ describe('Tasks API (/api/tasks)', () => {
     });
   });
 
+  describe('GET /api/tasks/:id', () => {
+    it('should return 200 and the task for existing ID', async () => {
+      const task = createTask({ title: 'Specific Task', description: 'Detail' });
+      const res = await request(app).get(`/api/tasks/${task.id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.id).toBe(task.id);
+      expect(res.body.data.title).toBe('Specific Task');
+    });
+
+    it('should return 404 for non-existent task ID', async () => {
+      const res = await request(app).get('/api/tasks/non-existent-id');
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Task not found');
+    });
+  });
+
   describe('POST /api/tasks', () => {
     it('should create a new task successfully', async () => {
       const res = await request(app)
@@ -61,7 +77,6 @@ describe('Tasks API (/api/tasks)', () => {
         .send({ title: 'Valid title', priority: 'urgent' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Priority must be');
     });
   });
 
@@ -77,6 +92,28 @@ describe('Tasks API (/api/tasks)', () => {
       expect(res.body.data.status).toBe('done');
     });
 
+    it('should update task title and description', async () => {
+      const task = createTask({ title: 'Old Title', description: 'Old Desc' });
+
+      const res = await request(app)
+        .patch(`/api/tasks/${task.id}`)
+        .send({ title: 'New Title', description: 'New Desc' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.title).toBe('New Title');
+      expect(res.body.data.description).toBe('New Desc');
+    });
+
+    it('should return 400 when updating with invalid priority', async () => {
+      const task = createTask({ title: 'Priority Test' });
+
+      const res = await request(app)
+        .patch(`/api/tasks/${task.id}`)
+        .send({ priority: 'invalid-priority' });
+
+      expect(res.status).toBe(400);
+    });
+
     it('should return 404 for non-existent task', async () => {
       const res = await request(app)
         .patch('/api/tasks/non-existent-id')
@@ -88,7 +125,7 @@ describe('Tasks API (/api/tasks)', () => {
   });
 
   describe('DELETE /api/tasks/:id', () => {
-    it('should delete existing task', async () => {
+    it('should delete existing task and return 200', async () => {
       const task = createTask({ title: 'Temporary task' });
 
       const res = await request(app).delete(`/api/tasks/${task.id}`);

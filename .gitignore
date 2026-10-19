@@ -41,3 +41,6 @@ test-results/
 *.sqlite
 *.sqlite3
 *.db
+
+# TypeScript Build Info
+*.tsbuildinfo

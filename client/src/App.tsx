@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import TaskBoard from './components/TaskBoard.js';
 import './App.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export function App() {
   const [healthStatus, setHealthStatus] = useState<{ status: string; uptime: number } | null>(null);
 
   useEffect(() => {
-    fetch('/health')
+    fetch(`${API_BASE}/health`)
       .then((res) => res.json())
       .then((data) => setHealthStatus(data))
       .catch(() => setHealthStatus(null));

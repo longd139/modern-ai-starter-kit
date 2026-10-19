@@ -10,6 +10,8 @@ export interface Task {
   createdAt: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const COLUMNS: { id: Task['status']; label: string; icon: string }[] = [
   { id: 'todo', label: 'Cần làm (Todo)', icon: '📋' },
   { id: 'in_progress', label: 'Đang làm (In Progress)', icon: '⚡' },
@@ -23,17 +25,24 @@ export const TaskBoard: React.FC = () => {
   const [newDesc, setNewDesc] = useState('');
   const [newPriority, setNewPriority] = useState<Task['priority']>('medium');
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showFeedback = (text: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ type, text });
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/tasks');
+      const res = await fetch(`${API_BASE}/api/tasks`);
       if (!res.ok) throw new Error('Không thể tải danh sách tasks');
       const json = await res.json();
       setTasks(json.data || []);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Lỗi kết nối server');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -48,7 +57,7 @@ export const TaskBoard: React.FC = () => {
     if (!newTitle.trim()) return;
 
     try {
-      const res = await fetch('/api/tasks', {
+      const res = await fetch(`${API_BASE}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,15 +74,17 @@ export const TaskBoard: React.FC = () => {
 
       setNewTitle('');
       setNewDesc('');
+      showFeedback('Tạo công việc mới thành công!', 'success');
       await fetchTasks();
-    } catch (err: any) {
-      alert(`Lỗi: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi không xác định khi tạo task';
+      showFeedback(message, 'error');
     }
   };
 
   const handleStatusChange = async (id: string, nextStatus: Task['status']) => {
     try {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),
@@ -81,19 +92,21 @@ export const TaskBoard: React.FC = () => {
 
       if (!res.ok) throw new Error('Không thể cập nhật trạng thái');
       await fetchTasks();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái';
+      showFeedback(message, 'error');
     }
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa task này?')) return;
     try {
-      const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/tasks/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Không thể xóa task');
+      showFeedback('Đã xóa công việc.', 'success');
       await fetchTasks();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi khi xóa task';
+      showFeedback(message, 'error');
     }
   };
 
@@ -139,6 +152,23 @@ export const TaskBoard: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {feedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            padding: '0.75rem 1rem',
+            background: feedback.type === 'error' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+            color: feedback.type === 'error' ? '#f43f5e' : '#22c55e',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            fontSize: '0.9rem',
+          }}
+        >
+          {feedback.type === 'error' ? '⚠️' : '✅'} {feedback.text}
+        </div>
+      )}
 
       {error && (
         <div style={{ padding: '1rem', background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', borderRadius: '8px', marginBottom: '1rem' }}>

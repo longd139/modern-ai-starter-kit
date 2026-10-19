@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import {
   getTasks,
   getTaskById,
@@ -8,6 +9,20 @@ import {
 } from '../db.js';
 
 const router = Router();
+
+// Zod schemas per CLAUDE.md conventions
+const createTaskSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required and must not be empty'),
+  description: z.string().optional().default(''),
+  priority: z.enum(['low', 'medium', 'high']).optional().default('medium'),
+});
+
+const updateTaskSchema = z.object({
+  title: z.string().trim().min(1, 'Title must not be empty').optional(),
+  description: z.string().optional(),
+  status: z.enum(['todo', 'in_progress', 'done']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+});
 
 // GET /api/tasks
 router.get('/', (_req: Request, res: Response) => {
@@ -26,47 +41,27 @@ router.get('/:id', (req: Request<{ id: string }>, res: Response) => {
 
 // POST /api/tasks
 router.post('/', (req: Request, res: Response) => {
-  const { title, description, priority } = req.body;
-
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return res.status(400).json({ error: 'Title is required and must not be empty' });
+  const parsed = createTaskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: parsed.error.issues.map((i) => i.message).join(', '),
+    });
   }
 
-  const validPriorities = ['low', 'medium', 'high'];
-  if (priority && !validPriorities.includes(priority)) {
-    return res.status(400).json({ error: 'Priority must be low, medium, or high' });
-  }
-
-  const task = createTask({
-    title: title.trim(),
-    description: description || '',
-    priority,
-  });
-
+  const task = createTask(parsed.data);
   res.status(201).json({ data: task, message: 'Task created successfully' });
 });
 
 // PATCH /api/tasks/:id
 router.patch('/:id', (req: Request<{ id: string }>, res: Response) => {
-  const { status, title, description, priority } = req.body;
-
-  const validStatuses = ['todo', 'in_progress', 'done'];
-  if (status && !validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status value' });
+  const parsed = updateTaskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: parsed.error.issues.map((i) => i.message).join(', '),
+    });
   }
 
-  const validPriorities = ['low', 'medium', 'high'];
-  if (priority && !validPriorities.includes(priority)) {
-    return res.status(400).json({ error: 'Invalid priority value' });
-  }
-
-  const updated = updateTask(req.params.id, {
-    ...(status && { status }),
-    ...(title && { title: title.trim() }),
-    ...(description !== undefined && { description }),
-    ...(priority && { priority }),
-  });
-
+  const updated = updateTask(req.params.id, parsed.data);
   if (!updated) {
     return res.status(404).json({ error: 'Task not found' });
   }

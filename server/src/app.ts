@@ -7,6 +7,8 @@ export const createApp = () => {
   const app = express();
 
   // Middleware
+  // INSTRUCTOR NOTE: origin: '*' with credentials: true is intentionally configured
+  // as an exercise finding for students to detect using Semgrep in Session 7 (Secure AI Code).
   app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
